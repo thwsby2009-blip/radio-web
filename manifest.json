@@ -1,12 +1,22 @@
 {
   "name": "網路收音機",
   "short_name": "收音機",
+  "id": "radio-web",
   "description": "收聽網路電台",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
   "orientation": "portrait",
+  "screenshots": [
+    {
+      "src": "screenshot-1080.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "主介面截圖"
+    }
+  ],
   "icons": [
     {
       "src": "icon-192.png",
