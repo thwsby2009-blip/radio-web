@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>網路收音機</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1e1e1e;
+  --border: #2a2a2a;
+  --accent: #f25c05;
+  --accent-glow: rgba(242,92,5,0.5);
+  --accent-dim: rgba(242,92,5,0.15);
+  --text: #f0f0f0;
+  --muted: #666;
+  --neon-blue: #00d4ff;
+  --neon-pink: #ff2d78;
+  --nav-bg: #111;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  overflow-x: hidden;
+}
+
+/* ===== HEADER ===== */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+}
+.header-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--text);
+}
+.header-title span {
+  color: var(--accent);
+  text-shadow: 0 0 20px var(--accent-glow);
+}
+.search-btn {
+  width: 36px; height: 36px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.search-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ===== MAIN VISUAL ===== */
+.main-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 20px 16px;
+}
+
+/* Logo with neon glow */
+.logo-wrap {
+  position: relative;
+  margin-bottom: 20px;
+}
+.logo-ring {
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #1e1e1e, #0d0d0d);
+  border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  box-shadow:
+    0 0 30px var(--accent-glow),
+    0 0 60px rgba(242,92,5,0.25),
+    inset 0 0 30px rgba(242,92,5,0.1);
+}
+.logo-ring::before {
+  content: '';
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  border: 1px solid rgba(242,92,5,0.3);
+  animation: ring-pulse 3s ease-in-out infinite;
+}
+.logo-ring::after {
+  content: '';
+  position: absolute; inset: -16px;
+  border-radius: 50%;
+  border: 1px solid rgba(242,92,5,0.15);
+  animation: ring-pulse 3s ease-in-out infinite 0.5s;
+}
+@keyframes ring-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+.logo-icon {
+  font-size: 3.5rem;
+  filter: drop-shadow(0 0 12px var(--accent));
+}
+.logo-label {
+  position: absolute;
+  bottom: -24px;
+  left: 50%; transform: translateX(-50%);
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* Waveform visualizer */
+.waveform {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+  height: 56px;
+  margin-bottom: 16px;
+}
+.wave-bar {
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent), rgba(242,92,5,0.3));
+  transition: height 0.1s ease;
+  box-shadow: 0 0 6px rgba(242,92,5,0.4);
+}
+.wave-bar.active {
+  animation: wave-anim 0.8s ease-in-out infinite;
+}
+@keyframes wave-anim {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+
+/* Station info */
+.station-info { text-align: center; margin-bottom: 8px; }
+.station-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.station-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.song-info {
+  text-align: center;
+  margin-bottom: 4px;
+}
+.song-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text);
+}
+.song-artist {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ===== CONTROLS ===== */
+.controls-section {
+  padding: 12px 24px 20px;
+}
+
+/* Progress bar */
+.progress-wrap {
+  margin-bottom: 16px;
+}
+.progress-bar {
+  width: 100%; height: 4px;
+  background: var(--surface2);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #ff8040);
+  border-radius: 2px;
+  width: 35%;
+  position: relative;
+  transition: width 0.3s;
+}
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  right: -6px; top: -4px;
+  width: 12px; height: 12px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+.progress-time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: 'Chakra Petch', monospace;
+  margin-top: 6px;
+}
+
+/* Main controls */
+.main-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+.ctrl-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.ctrl-btn:hover { color: var(--text); transform: scale(1.1); }
+.ctrl-btn:active { transform: scale(0.95); }
+.ctrl-btn.play {
+  width: 68px; height: 68px;
+  background: var(--accent);
+  border-radius: 50%;
+  font-size: 1.8rem;
+  color: #fff;
+  box-shadow: 0 0 24px var(--accent-glow), 0 0 48px rgba(242,92,5,0.25);
+  margin: 0 8px;
+}
+.ctrl-btn.play:hover { background: #e04e00; box-shadow: 0 0 32px var(--accent-glow); }
+
+/* Sub controls */
+.sub-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+.sub-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.sub-btn:hover { color: var(--accent); }
+.sub-btn span { font-size: 0.65rem; font-family: 'Chakra Petch', monospace; }
+.volume-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 160px;
+  margin: 0 16px;
+}
+.volume-icon { color: var(--muted); font-size: 0.9rem; }
+.volume-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 3px;
+  background: var(--surface2);
+  border-radius: 2px;
+  outline: none;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+/* ===== RECOMMENDATIONS ===== */
+.recommend-section {
+  padding: 16px 0 12px;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+.section-more {
+  font-size: 0.7rem;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.section-more:hover { color: var(--accent); }
+.section-more.expanded { color: var(--accent); }
+
+/* ===== ALL STATIONS PANEL ===== */
+.all-stations-panel {
+  display: none;
+  padding: 0 20px 16px;
+}
+.all-stations-panel.open {
+  display: block;
+}
+.all-stations-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.all-station-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.all-station-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.all-station-card.active { border-color: var(--accent); background: var(--accent-dim); }
+.all-station-card .card-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+.all-station-card .card-info { flex: 1; min-width: 0; }
+.all-station-card .card-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.all-station-card .card-sub {
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.all-station-card .card-play {
+  font-size: 0.7rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.cards-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 0 20px 12px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.cards-scroll::-webkit-scrollbar { display: none; }
+.rec-card {
+  flex-shrink: 0;
+  width: 130px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: all 0.2s;
+}
+.rec-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.rec-card.active { border-color: var(--accent); background: var(--accent-dim); box-shadow: 0 0 12px rgba(242,92,5,0.2); }
+.rec-card-art {
+  width: 100%; height: 100px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+  margin-bottom: 8px;
+}
+.rec-card-title {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rec-card-sub {
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.rec-card-listeners {
+  font-size: 0.62rem;
+  color: var(--accent);
+  margin-top: 4px;
+  font-family: 'Chakra Petch', monospace;
+}
+
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-title">網路<span>收音機</span></div>
+  <button class="search-btn">🔍</button>
+</header>
+
+<!-- MAIN VISUAL -->
+<div class="main-visual">
+  <div class="logo-wrap">
+    <div class="logo-ring">
+      <div class="logo-icon">🎵</div>
+    </div>
+    <div class="logo-label">FM 99.7</div>
+  </div>
+
+  <div class="waveform" id="waveform"></div>
+
+  <div class="station-info">
+    <div class="station-name">台灣流行音樂台</div>
+    <div class="station-sub">Taiwan Pop Radio</div>
+  </div>
+
+  <div class="song-info">
+    <div class="song-title">那些你很冒險的夢</div>
+    <div class="song-artist">林俊傑 JJ Lin</div>
+  </div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls-section">
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-time">
+      <span id="curTime">02:15</span>
+      <span id="totTime">03:45</span>
+    </div>
+  </div>
+
+  <div class="main-controls">
+    <button class="ctrl-btn" id="prevBtn">⏮</button>
+    <button class="ctrl-btn play" id="playBtn">▶</button>
+    <button class="ctrl-btn" id="nextBtn">⏭</button>
+  </div>
+
+  <div class="sub-controls">
+    <button class="sub-btn" id="heartBtn">🤍 <span>收藏</span></button>
+    <div class="volume-wrap">
+      <div class="volume-icon">🔈</div>
+      <input type="range" class="volume-slider" id="volume" min="0" max="1" step="0.01" value="0.75">
+      <div class="volume-icon">🔊</div>
+    </div>
+    <button class="sub-btn">🔄 <span>循環</span></button>
+  </div>
+</div>
+
+<!-- RECOMMENDATIONS -->
+<div class="recommend-section" id="recSection">
+  <div class="section-header">
+    <div class="section-title">熱門推薦</div>
+    <div class="section-more" id="seeAllBtn">查看全部 →</div>
+  </div>
+  <div class="cards-scroll" id="cardsScroll"></div>
+
+  <!-- All stations panel -->
+  <div class="all-stations-panel" id="allStationsPanel">
+    <div class="all-stations-grid" id="allStationsGrid"></div>
+  </div>
+</div>
+
+
+
+<audio id="audio"></audio>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+// Waveform bars
+const wf = document.getElementById('waveform');
+const barCount = 28;
+for (let i = 0; i < barCount; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'wave-bar';
+  bar.style.height = (Math.random() * 30 + 15) + '%';
+  wf.appendChild(bar);
+}
+
+const stations = [
+  { name: "臺北電台", sub: "台語/國語", icon: "🎵", url: "https://stream.ginnet.cloud/live0130lo-yfyo/_definst_/fm/playlist.m3u8" },
+  { name: "Taiwan Lounge", sub: "Lounge", icon: "🌴", url: "https://azuracast.conceptradio.fr/radio/8030/stream.mp3" },
+  { name: "Ai Radio 台灣", sub: "華語AI", icon: "🤖", url: "https://n10.rcs.revma.com/h4ta80hbqwuvv" },
+  { name: "AsiaFM 亞太", sub: "華語", icon: "🌏", url: "https://n13.rcs.revma.com/kydend74hv8uv" },
+  { name: "Jazz Radio", sub: "Jazz", icon: "🎷", url: "https://jazz-wr01.ice.infomaniak.ch/jazz-wr01-128.mp3" },
+  { name: "瑞士古典", sub: "Classical", icon: "🎻", url: "https://stream.srg-ssr.ch/m/rsc_de/mp3_128" },
+  { name: "SomaFM Drone Zone", sub: "Ambience", icon: "🌙", url: "https://ice1.somafm.com/dronezone-128-mp3" },
+  { name: "FIP Radio", sub: "Electronic", icon: "☕", url: "https://icecast.radiofrance.fr/fip-midfi.mp3" },
+  { name: "KEXP 90.3", sub: "另類", icon: "🎸", url: "https://kexp-mp3-128.streamguys1.com/kexp128.mp3" },
+  { name: "SomaFM Groove Salad", sub: "Ambient", icon: "🥗", url: "https://ice1.somafm.com/groovesalad-128-mp3" },
+];
+
+let current = 0;
+let isPlaying = false;
+let progress = 0;
+let progressInterval = null;
+let hearted = false;
+
+const audio = document.getElementById('audio');
+const playBtn = document.getElementById('playBtn');
+const nowName = document.querySelector('.station-name');
+const nowSub = document.querySelector('.station-sub');
+const songTitle = document.querySelector('.song-title');
+const songArtist = document.querySelector('.song-artist');
+const progressFill = document.getElementById('progressFill');
+const curTimeEl = document.getElementById('curTime');
+const totTimeEl = document.getElementById('totTime');
+const heartBtn = document.getElementById('heartBtn');
+const bars = wf.querySelectorAll('.wave-bar');
+const volume = document.getElementById('volume');
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+function loadStation(i) {
+  current = i;
+  const s = stations[i];
+  if (s.url.endsWith('.m3u8')) {
+    if (Hls.isSupported()) {
+      if (window.hls) window.hls.destroy();
+      window.hls = new Hls();
+      window.hls.loadSource(s.url);
+      window.hls.attachMedia(audio);
+    } else {
+      audio.src = s.url;
+    }
+  } else {
+    if (window.hls) { window.hls.destroy(); window.hls = null; }
+    audio.src = s.url;
+  }
+  nowName.textContent = s.name;
+  nowSub.textContent = s.sub;
+  songTitle.textContent = '等待播放...';
+  songArtist.textContent = s.sub;
+  document.querySelector('.logo-label').textContent = s.name.slice(0, 6);
+  document.querySelector('.logo-icon').textContent = s.icon;
+  renderCards();
+  if (isPlaying) audio.play().catch(() => {});
+}
+
+function startPlaying() {
+  isPlaying = true;
+  playBtn.textContent = '⏸';
+  bars.forEach((b, i) => {
+    b.classList.add('active');
+    b.style.animationDelay = (i * 0.05) + 's';
+  });
+  audio.play().catch(e => { songTitle.textContent = '播放失敗'; songArtist.textContent = '嘗試下一首'; });
+  progressInterval = setInterval(() => {
+    if (audio.duration) {
+      progress = (audio.currentTime / audio.duration) * 100;
+      progressFill.style.width = progress + '%';
+      curTimeEl.textContent = formatTime(audio.currentTime);
+      totTimeEl.textContent = formatTime(audio.duration);
+    }
+  }, 500);
+}
+
+function stopPlaying() {
+  isPlaying = false;
+  playBtn.textContent = '▶';
+  audio.pause();
+  bars.forEach(b => {
+    b.classList.remove('active');
+    b.style.height = (Math.random() * 30 + 15) + '%';
+  });
+  clearInterval(progressInterval);
+}
+
+playBtn.addEventListener('click', () => {
+  if (!audio.src || audio.src === location.href) { loadStation(current); }
+  if (isPlaying) stopPlaying(); else startPlaying();
+});
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+  loadStation((current - 1 + stations.length) % stations.length);
+  if (isPlaying) audio.play().catch(() => {});
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  loadStation((current + 1) % stations.length);
+  if (isPlaying) audio.play().catch(() => {});
+});
+
+function renderCards() {
+  document.querySelectorAll('.rec-card').forEach((card, i) => {
+    card.classList.toggle('active', i === current);
+  });
+}
+
+function renderAllStationsGrid() {
+  const grid = document.getElementById('allStationsGrid');
+  grid.innerHTML = '';
+  stations.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'all-station-card' + (i === current ? ' active' : '');
+    card.innerHTML = `
+      <div class="card-icon">${s.icon}</div>
+      <div class="card-info">
+        <div class="card-name">${s.name}</div>
+        <div class="card-sub">${s.sub}</div>
+      </div>
+      <div class="card-play">▶</div>`;
+    card.addEventListener('click', () => {
+      loadStation(i);
+      renderAllStationsGrid();
+      startPlaying();
+    });
+    grid.appendChild(card);
+  });
+}
+
+function renderScrollCards() {
+  const scroll = document.getElementById('cardsScroll');
+  scroll.innerHTML = '';
+  stations.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'rec-card' + (i === current ? ' active' : '');
+    card.innerHTML = `
+      <div class="rec-card-art">${s.icon}</div>
+      <div class="rec-card-title">${s.name}</div>
+      <div class="rec-card-sub">${s.sub}</div>
+      <div class="rec-card-listeners">▶ ${(Math.floor(Math.random() * 9) + 1)}.${(Math.floor(Math.random() * 9))}k 在線</div>`;
+    card.addEventListener('click', () => {
+      loadStation(i);
+      renderScrollCards();
+      startPlaying();
+    });
+    scroll.appendChild(card);
+  });
+}
+
+// See All toggle
+let seeAllOpen = false;
+document.getElementById('seeAllBtn').addEventListener('click', () => {
+  seeAllOpen = !seeAllOpen;
+  document.getElementById('allStationsPanel').classList.toggle('open', seeAllOpen);
+  document.getElementById('seeAllBtn').textContent = seeAllOpen ? '收合 ←' : '查看全部 →';
+  document.getElementById('seeAllBtn').classList.toggle('expanded', seeAllOpen);
+  if (seeAllOpen) renderAllStationsGrid();
+});
+
+
+
+heartBtn.addEventListener('click', () => {
+  hearted = !hearted;
+  heartBtn.innerHTML = hearted ? '❤️ <span>已收藏</span>' : '🤍 <span>收藏</span>';
+});
+
+volume.addEventListener('input', e => { audio.volume = e.target.value; });
+audio.volume = 0.75;
+
+audio.addEventListener('play', () => {
+  songTitle.textContent = '播放中';
+  songArtist.textContent = stations[current].sub;
+});
+audio.addEventListener('error', () => {
+  songTitle.textContent = '載入失敗';
+  songArtist.textContent = '嘗試下一首或檢查網路';
+  stopPlaying();
+});
+
+document.getElementById('progressBar').addEventListener('click', e => {
+  if (!audio.duration) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const ratio = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = ratio * audio.duration;
+  progress = ratio * 100;
+  progressFill.style.width = progress + '%';
+});
+
+// Init
+document.querySelector('.logo-icon').textContent = stations[0].icon;
+document.querySelector('.logo-label').textContent = stations[0].name;
+loadStation(0);
+renderScrollCards();
+</script>
+</body>
+</html>
